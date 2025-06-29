@@ -1,6 +1,6 @@
-use crate::block_processor::axum_test::expect_json::__private::serde_trampoline::Deserialize;
 use config::{Config, ConfigError, Environment, File};
 use dotenv::dotenv;
+use serde::Deserialize;
 
 #[derive(Debug, Deserialize, Clone)]
 pub struct BitcoinConfig {

@@ -3,12 +3,18 @@ name = "bitcoin-explorer"
 version = "0.1.0"
 edition = "2024"
 
+[[bench]]
+name = "processor_benchmark"
+harness = false
+
+[dev-dependencies]
+criterion = { version = "0.6.0", features = ["async_tokio"] }
+
 [dependencies]
 tokio = { version = "1.45.1", features = ["full"] }
 tokio-stream = { version = "0.1.17", features = ["sync"] }
-chain-syncer = { path = "../chain-syncer", version = "0.1.0" }
+chain-syncer = { git = "https://github.com/pragmaxim-com/chain-syncer" }
 redbit = { git = "https://github.com/pragmaxim-com/redbit" }
-min-batch = { git = "https://github.com/pragmaxim-com/min-batch.rs" }
 config = "0.15.11"
 bitcoin = "0.32.0"
 bitcoincore-rpc = {git = "https://github.com/clarkmoody/rust-bitcoincore-rpc", branch = "support-core-22-and-23"}

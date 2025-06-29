@@ -1,7 +1,6 @@
 ## Bitcoin Explorer
 
-Bitcoin explorer is a universal blockchain explorer on top of 
-[redbit](https://github.com/pragmaxim-com/redbit) and [chain-syncer](https://github.com/pragmaxim-com/chain-syncer)
+Bitcoin explorer on top of [redbit](https://github.com/pragmaxim-com/redbit) and [chain-syncer](https://github.com/pragmaxim-com/chain-syncer)
 
 It uses tiny `block_height/tx_index/utxo_index/[asset_index]` dictionary pointers to big hashes, ie. not a single hash is duplicated,
 which allows for much better space efficiency and for ~ `6 000 - 12 000 Utxos+Assets / second` syncing speed with local node and an old SSD.

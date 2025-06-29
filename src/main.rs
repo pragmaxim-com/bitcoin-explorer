@@ -1,15 +1,3 @@
-mod block_persistence;
-mod block_processor;
-mod block_provider;
-mod btc_client;
-mod config;
-mod model;
-mod storage;
-
-use crate::block_persistence::BtcBlockPersistence;
-use crate::block_provider::BtcBlockProvider;
-use crate::config::BitcoinConfig;
-use crate::model::Block;
 use anyhow::Result;
 use chain_syncer::api::{BlockPersistence, BlockProvider};
 use chain_syncer::scheduler::Scheduler;
@@ -20,6 +8,12 @@ use redbit::redb::Database;
 use redbit::*;
 use std::env;
 use std::sync::Arc;
+use bitcoin_explorer::block_persistence::BtcBlockPersistence;
+use bitcoin_explorer::block_provider::BtcBlockProvider;
+use bitcoin_explorer::btc_client::BtcBlock;
+use bitcoin_explorer::config::BitcoinConfig;
+use bitcoin_explorer::model::Block;
+use bitcoin_explorer::storage;
 
 async fn maybe_run_server(http_conf: &HttpSettings, db: Arc<Database>) -> () {
     if http_conf.enable {
@@ -30,7 +24,7 @@ async fn maybe_run_server(http_conf: &HttpSettings, db: Arc<Database>) -> () {
     }
 }
 
-async fn maybe_run_indexing(index_config: &IndexerSettings, scheduler: Scheduler<Block>) -> () {
+async fn maybe_run_indexing(index_config: &IndexerSettings, scheduler: Scheduler<BtcBlock, Block>) -> () {
     if index_config.enable {
         info!("Starting indexing process");
         scheduler.schedule(&index_config).await
@@ -45,10 +39,11 @@ async fn main() -> Result<()> {
     let btc_config = BitcoinConfig::new("config/bitcoin")?;
     let db_path: String = format!("{}/{}/{}", app_config.indexer.db_path, "main", "btc");
     let db = Arc::new(storage::get_db(env::home_dir().unwrap().join(&db_path))?);
+    let fetching_par: usize = app_config.indexer.fetching_parallelism.clone().into();
 
-    let block_provider: Arc<dyn BlockProvider<Block>> = Arc::new(BtcBlockProvider::new(&btc_config)?);
+    let block_provider: Arc<dyn BlockProvider<BtcBlock, Block>> = Arc::new(BtcBlockProvider::new(&btc_config, fetching_par)?);
     let block_persistence: Arc<dyn BlockPersistence<Block>> = Arc::new(BtcBlockPersistence { db: Arc::clone(&db) });
-    let scheduler: Scheduler<Block> = Scheduler::new(block_provider, block_persistence);
+    let scheduler: Scheduler<BtcBlock, Block> = Scheduler::new(block_provider, block_persistence);
 
     let indexing_f = maybe_run_indexing(&app_config.indexer, scheduler);
     let server_f = maybe_run_server(&app_config.http, Arc::clone(&db));
