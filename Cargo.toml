@@ -27,3 +27,4 @@ thiserror = "2.0.12"
 dotenv = "0.15.0"
 chrono = "0.4.38"
 anyhow = "1.0.80"
+serde_with = {  version = "3.14.0", features = ["hex", "chrono_0_4", "base64", "time_0_3"] }
