@@ -8,6 +8,7 @@ use redbit::redb::Database;
 use redbit::*;
 use std::env;
 use std::sync::Arc;
+use tower_http::cors;
 use bitcoin_explorer::block_persistence::BtcBlockPersistence;
 use bitcoin_explorer::block_provider::BtcBlockProvider;
 use bitcoin_explorer::btc_client::BtcBlock;
@@ -18,7 +19,11 @@ use bitcoin_explorer::storage;
 async fn maybe_run_server(http_conf: &HttpSettings, db: Arc<Database>) -> () {
     if http_conf.enable {
         info!("Starting http server at {}", http_conf.bind_address);
-        serve(RequestState { db: Arc::clone(&db) }, http_conf.bind_address, None).await
+        let cors = cors::CorsLayer::new()
+            .allow_origin(cors::Any) // or use a specific origin: `AllowOrigin::exact("http://localhost:5173".parse().unwrap())`
+            .allow_methods(cors::Any)
+            .allow_headers(cors::Any);
+        serve(RequestState { db: Arc::clone(&db) }, http_conf.bind_address, None, Some(cors)).await
     } else {
         ready(()).await
     }
