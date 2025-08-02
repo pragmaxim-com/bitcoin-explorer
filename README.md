@@ -3,7 +3,10 @@
 Bitcoin explorer on top of [redbit](https://github.com/pragmaxim-com/redbit) and [chain-syncer](https://github.com/pragmaxim-com/chain-syncer)
 
 It uses tiny `block_height/tx_index/utxo_index/[asset_index]` dictionary pointers to big hashes, ie. not a single hash is duplicated,
-which allows for much better space efficiency and for ~ `6 000 - 12 000 Utxos+Assets / second` syncing speed with local node and an old SSD.
+which allows for much better space efficiency and syncing speed with local node and an SSD.
+
+> Note that indexing speed in logs is the **average**, the first ~ 100k blocks with just one Tx are indexed at ~ `300 Inputs+outputs+assets / second`.
+> Indexing is optimized for the big blocks where the throughput reaches ~ `3 000 Inputs+outputs+assets / second` if node and indexer each use its own SSD.
 
 Chain tip is "eventually consistent" through fork competition, ie. forks get settled eventually and superseded forks are deleted from DB.
 
@@ -15,8 +18,9 @@ sudo apt-get install rustup
 
 ### Usage
 
+Run bitcoin node locally, rpc at port 8332 can be changed in `config/bitcoin.toml`, for example:
 ```
-cat bitcoin.conf | grep rpc
+cat ~/snap/bitcoin-core/common/.bitcoin/bitcoin.conf | grep rpc
 rpcthreads=40
 rpcworkqueue=512
 rpcuser=foo
@@ -25,8 +29,17 @@ rpcallowip=10.0.1.0/24
 rpcport=8332
 rpcbind=0.0.0.0
 
+bitcoin-core.daemon -daemon
+bitcoin-core.cli getblockchaininfo
+tail -f ~/snap/bitcoin-core/common/.bitcoin/debug.log
+```
+export secrets or set them in `.env` file :
+```
 export BITCOIN__API_USERNAME="foo"
 export BITCOIN__API_PASSWORD="bar"
+```
+Then : 
+```
 cargo run
 ```
 

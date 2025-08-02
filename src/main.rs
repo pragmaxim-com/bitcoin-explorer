@@ -43,7 +43,8 @@ async fn main() -> Result<()> {
     let app_config = AppConfig::new("config/settings")?;
     let btc_config = BitcoinConfig::new("config/bitcoin")?;
     let db_path: String = format!("{}/{}/{}", app_config.indexer.db_path, "main", "btc");
-    let db = Arc::new(storage::get_db(env::home_dir().unwrap().join(&db_path))?);
+    let full_db_path = env::home_dir().unwrap().join(&db_path);
+    let db = Arc::new(storage::get_db(full_db_path)?);
     let fetching_par: usize = app_config.indexer.fetching_parallelism.clone().into();
 
     let block_provider: Arc<dyn BlockProvider<BtcBlock, Block>> = Arc::new(BtcBlockProvider::new(&btc_config, fetching_par)?);
