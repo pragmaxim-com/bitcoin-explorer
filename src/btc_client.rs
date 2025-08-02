@@ -1,5 +1,5 @@
 use crate::config::BitcoinConfig;
-use crate::model::{BlockHash, BlockHeight, ExplorerError};
+use crate::model::{BlockHash, Height, ExplorerError};
 use bitcoin::hashes::Hash;
 use bitcoincore_rpc::{Auth, Client, RpcApi};
 use std::sync::Arc;
@@ -7,7 +7,7 @@ use std::sync::Arc;
 // Bitcoin block wrapper
 #[derive(Debug, Clone)]
 pub struct BtcBlock {
-    pub height: BlockHeight,
+    pub height: Height,
     pub underlying: bitcoin::Block,
 }
 
@@ -39,20 +39,20 @@ impl BtcClient {
         Ok(BtcBlock { height, underlying: block })
     }
 
-    pub fn get_block_by_height(&self, height: BlockHeight) -> Result<BtcBlock, ExplorerError> {
+    pub fn get_block_by_height(&self, height: Height) -> Result<BtcBlock, ExplorerError> {
         let block_hash = self.rpc_client.get_block_hash(height.0 as u64)?;
         let block = self.rpc_client.get_block(&block_hash)?;
         Ok(BtcBlock { height, underlying: block })
     }
 
-    fn get_block_height(&self, block: &bitcoin::Block) -> Result<BlockHeight, ExplorerError> {
+    fn get_block_height(&self, block: &bitcoin::Block) -> Result<Height, ExplorerError> {
         // Try to get height using fast method (BIP34)
         if let Ok(height) = block.bip34_block_height() {
-            return Ok(BlockHeight(height as u32));
+            return Ok(Height(height as u32));
         }
         // Fallback to fetching block header for height
         let block_hash = block.block_hash();
         let verbose_block = self.rpc_client.get_block_info(&block_hash)?;
-        Ok(BlockHeight(verbose_block.height as u32))
+        Ok(Height(verbose_block.height as u32))
     }
 }

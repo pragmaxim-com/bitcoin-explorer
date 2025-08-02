@@ -4,28 +4,18 @@ use chrono::DateTime;
 pub use redbit::*;
 use std::fmt;
 
-#[root_key]
-pub struct BlockHeight(pub u32);
+#[root_key] pub struct Height(pub u32);
 
-#[pointer_key(u16)]
-pub struct TxPointer(BlockHeight);
-#[pointer_key(u16)]
-pub struct UtxoPointer(TxPointer);
-#[pointer_key(u16)]
-pub struct InputPointer(TxPointer);
-#[pointer_key(u8)]
-pub struct AssetPointer(UtxoPointer);
+#[pointer_key(u16)] pub struct BlockPointer(Height);
+#[pointer_key(u16)] pub struct TransactionPointer(BlockPointer);
+#[pointer_key(u8)] pub struct UtxoPointer(TransactionPointer);
 
-#[column]
-pub struct Hash(pub String);
-#[column]
-pub struct BlockHash(pub [u8; 32]);
-#[column]
-pub struct TxHash(pub [u8; 32]);
-#[column]
-pub struct Address(pub Vec<u8>);
-#[column]
-pub struct ScriptHash(pub Vec<u8>);
+#[column] pub struct Hash(pub String);
+#[column("hex")] pub struct BlockHash(pub [u8; 32]);
+#[column("hex")] pub struct MerkleRoot(pub [u8; 32]);
+#[column("hex")] pub struct TxHash(pub [u8; 32]);
+#[column("hex")] pub struct ScriptHash(pub Vec<u8>);
+#[column("btc_addr")] pub struct Address(pub Vec<u8>);
 
 #[column]
 pub struct TempInputRef {
@@ -47,7 +37,7 @@ impl fmt::Display for BlockTimestamp {
 #[entity]
 pub struct Block {
     #[pk]
-    pub id: BlockHeight,
+    pub id: Height,
     pub header: BlockHeader,
     pub transactions: Vec<Transaction>,
     #[column(transient)]
@@ -57,19 +47,21 @@ pub struct Block {
 #[entity]
 pub struct BlockHeader {
     #[fk(one2one)]
-    pub id: BlockHeight,
+    pub id: Height,
     #[column(index)]
     pub hash: BlockHash,
     #[column(index)]
     pub prev_hash: BlockHash,
     #[column(range)]
     pub timestamp: BlockTimestamp,
+    #[column(index)]
+    pub merkle_root: MerkleRoot,
 }
 
 #[entity]
 pub struct Transaction {
     #[fk(one2many)]
-    pub id: TxPointer,
+    pub id: BlockPointer,
     #[column(index)]
     pub hash: TxHash,
     pub utxos: Vec<Utxo>,
@@ -81,10 +73,10 @@ pub struct Transaction {
 #[entity]
 pub struct Utxo {
     #[fk(one2many)]
-    pub id: UtxoPointer,
+    pub id: TransactionPointer,
     #[column]
     pub amount: u64,
-    #[column]
+    #[column(dictionary)]
     pub script_hash: ScriptHash,
     #[column(dictionary)]
     pub address: Address,
@@ -93,7 +85,7 @@ pub struct Utxo {
 #[entity]
 pub struct InputRef {
     #[fk(one2many)]
-    pub id: InputPointer,
+    pub id: TransactionPointer,
 }
 
 impl BlockHeaderLike for BlockHeader {
@@ -113,11 +105,9 @@ impl BlockHeaderLike for BlockHeader {
 
 impl BlockLike for Block {
     type Header = BlockHeader;
-
     fn header(&self) -> &Self::Header {
         &self.header
     }
-
     fn weight(&self) -> u32 {
         self.weight
     }

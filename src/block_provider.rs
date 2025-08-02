@@ -1,9 +1,6 @@
 use crate::btc_client::{BtcBlock, BtcClient};
 use crate::config::BitcoinConfig;
-use crate::model::{
-    Address, Block, BlockHash, BlockHeader, BlockHeight, BlockTimestamp, ExplorerError, ScriptHash, TempInputRef, Transaction, TxHash, TxPointer,
-    Utxo, UtxoPointer,
-};
+use crate::model::{Address, Block, BlockHash, BlockHeader, Height, BlockTimestamp, ExplorerError, ScriptHash, TempInputRef, Transaction, TxHash, BlockPointer, Utxo, TransactionPointer, MerkleRoot};
 use async_trait::async_trait;
 use chain_syncer::api::{BlockProvider, ChainSyncError};
 use chain_syncer::info;
@@ -12,6 +9,12 @@ use futures::stream::StreamExt;
 use futures::Stream;
 use redbit::*;
 use std::{pin::Pin, sync::Arc};
+
+pub const SENTINEL: [u8; 25] = [
+    0xFF, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+    0x00, 0x00, 0x00, 0x00, 0x00, 0xD3, 0x0A, 0x40, 0x06,
+];
 
 pub struct BtcBlockProvider {
     pub client: Arc<BtcClient>,
@@ -30,27 +33,25 @@ impl BtcBlockProvider {
             })
             .collect()
     }
-    fn process_outputs(&self, outs: &[bitcoin::TxOut], tx_pointer: TxPointer) -> (BoxWeight, Vec<Utxo>) {
+    fn process_outputs(&self, outs: &[bitcoin::TxOut], tx_pointer: BlockPointer) -> (BoxWeight, Vec<Utxo>) {
         let mut result_outs = Vec::with_capacity(outs.len());
         for (out_index, out) in outs.iter().enumerate() {
-            let address_opt = if let Ok(address) = bitcoin::Address::from_script(out.script_pubkey.as_script(), bitcoin::Network::Bitcoin) {
-                Some(address.to_string().into_bytes())
+            let address = if let Ok(address) = bitcoin::Address::from_script(out.script_pubkey.as_script(), bitcoin::Network::Bitcoin) {
+                address.to_string().into_bytes()
             } else {
-                out.script_pubkey
-                    .p2pk_public_key()
-                    .map(|pk| bitcoin::Address::p2pkh(pk.pubkey_hash(), bitcoin::Network::Bitcoin).to_string().into_bytes())
+                SENTINEL.to_vec()
             };
             result_outs.push(Utxo {
-                id: UtxoPointer::from_parent(tx_pointer.clone(), out_index as u16),
+                id: TransactionPointer::from_parent(tx_pointer.clone(), out_index as u16),
                 amount: out.value.to_sat().into(),
                 script_hash: ScriptHash(out.script_pubkey.as_bytes().to_vec()),
-                address: Address(address_opt.unwrap_or_default()),
+                address: Address(address),
             })
         }
         (result_outs.len(), result_outs)
     }
-    fn process_tx(&self, height: BlockHeight, tx_index: u16, tx: &bitcoin::Transaction) -> Transaction {
-        let tx_pointer = TxPointer::from_parent(height, tx_index);
+    fn process_tx(&self, height: Height, tx_index: u16, tx: &bitcoin::Transaction) -> Transaction {
+        let tx_pointer = BlockPointer::from_parent(height, tx_index);
         let (_, outputs) = self.process_outputs(&tx.output, tx_pointer.clone());
         Transaction {
             id: tx_pointer.clone(),
@@ -70,6 +71,7 @@ impl BlockProvider<BtcBlock, Block> for BtcBlockProvider {
             timestamp: BlockTimestamp(block.underlying.header.time),
             hash: BlockHash(*block.underlying.block_hash().as_ref()),
             prev_hash: BlockHash(*block.underlying.header.prev_blockhash.as_ref()),
+            merkle_root: MerkleRoot(*block.underlying.header.merkle_root.as_ref()),
         };
 
         let mut block_weight = 0;
@@ -112,7 +114,7 @@ impl BlockProvider<BtcBlock, Block> for BtcBlockProvider {
         tokio_stream::iter(heights)
             .map(|height| {
                 let client = Arc::clone(&self.client);
-                tokio::task::spawn_blocking(move || client.get_block_by_height(BlockHeight(height)).expect("Failed to get block by height"))
+                tokio::task::spawn_blocking(move || client.get_block_by_height(Height(height)).expect("Failed to get block by height"))
             })
             .buffered(self.fetching_par)
             .map(|res| match res {

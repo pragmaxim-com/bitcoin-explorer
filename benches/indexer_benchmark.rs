@@ -6,7 +6,7 @@ use bitcoin_explorer::block_persistence::BtcBlockPersistence;
 use bitcoin_explorer::block_provider::BtcBlockProvider;
 use bitcoin_explorer::btc_client::{BtcBlock, BtcClient};
 use bitcoin_explorer::config::BitcoinConfig;
-use bitcoin_explorer::model::{Block, BlockHeight};
+use bitcoin_explorer::model::{Block, Height};
 use bitcoin_explorer::storage;
 use criterion::{criterion_group, criterion_main, BenchmarkId, Criterion, Throughput};
 
@@ -30,7 +30,7 @@ fn criterion_benchmark(c: &mut Criterion) {
     let end_height = start_height + batch_size;
     let mut btc_blocks: Vec<BtcBlock> = Vec::with_capacity(batch_size as usize);
     for height in start_height..end_height {
-        btc_blocks.push(btc_client.get_block_by_height(BlockHeight(height)).unwrap());
+        btc_blocks.push(btc_client.get_block_by_height(Height(height)).unwrap());
     }
 
     info!("Initiating processing");

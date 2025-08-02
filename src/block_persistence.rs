@@ -1,11 +1,11 @@
-use crate::model::{Block, BlockHash, BlockHeader, BlockHeight, InputPointer, InputRef, Transaction, TxPointer};
+use crate::model::{Block, BlockHash, BlockHeader, Height, InputRef, Transaction, BlockPointer, TransactionPointer};
 use chain_syncer::api::*;
 use redbit::*;
 use std::sync::Arc;
 use redbit::redb::ReadTransaction;
 
 pub struct BtcBlockPersistence {
-    pub db: Arc<redb::Database>,
+    pub db: Arc<Database>,
 }
 
 impl BtcBlockPersistence {
@@ -18,13 +18,12 @@ impl BtcBlockPersistence {
                 match tx_pointers.first() {
                     Some(tx_pointer) => {
                         tx.inputs.push(InputRef {
-                            id: InputPointer::from_parent(tx_pointer.clone(), transient_input.index as u16),
+                            id: TransactionPointer::from_parent(tx_pointer.clone(), transient_input.index as u16),
                         });
                     }
                     None => {
-                        // coinbase tx
                         tx.inputs.push(InputRef {
-                            id: InputPointer::from_parent(TxPointer::from_parent(BlockHeight(0), 0), 0)
+                            id: TransactionPointer::from_parent(BlockPointer::from_parent(Height(0), 0), 0)
                         })
                     }
                 }

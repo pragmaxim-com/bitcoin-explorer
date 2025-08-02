@@ -1,7 +1,7 @@
 use bitcoin_explorer::block_provider::BtcBlockProvider;
 use bitcoin_explorer::btc_client::{BtcBlock, BtcClient};
 use bitcoin_explorer::config::BitcoinConfig;
-use bitcoin_explorer::model::{Block, BlockHeight};
+use bitcoin_explorer::model::{Block, Height};
 use chain_syncer::api::BlockProvider;
 use chain_syncer::info;
 use criterion::{criterion_group, criterion_main, BenchmarkId, Criterion, Throughput};
@@ -18,7 +18,7 @@ fn criterion_benchmark(c: &mut Criterion) {
     let end_height = start_height + batch_size;
     let mut blocks: Vec<BtcBlock> = Vec::with_capacity(batch_size as usize);
     for height in start_height..end_height {
-        blocks.push(btc_client.get_block_by_height(BlockHeight(height)).unwrap());
+        blocks.push(btc_client.get_block_by_height(Height(height)).unwrap());
     }
 
     let provider: Arc<dyn BlockProvider<BtcBlock, Block>> =
