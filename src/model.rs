@@ -15,7 +15,9 @@ use std::fmt;
 #[column("hex")] pub struct MerkleRoot(pub [u8; 32]);
 #[column("hex")] pub struct TxHash(pub [u8; 32]);
 #[column("hex")] pub struct ScriptHash(pub Vec<u8>);
-#[column("btc_addr")] pub struct Address(pub Vec<u8>);
+
+#[column("crate::codec::BaseOrBech")]
+pub struct Address(pub Vec<u8>);
 
 #[column]
 pub struct TempInputRef {

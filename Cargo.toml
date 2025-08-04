@@ -22,6 +22,8 @@ bitcoin_hashes = "0.16.0"
 async-trait = "0.1.81"
 futures = "0.3.30"
 serde = { version = "1.0.219", features = ["derive"] }
+bech32 = "0.11.0"
+bs58 = { version = "0.5", features = ["check"] }
 axum = {  version = "0.8.4", features = ["default", "macros"] }
 thiserror = "2.0.12"
 dotenv = "0.15.0"

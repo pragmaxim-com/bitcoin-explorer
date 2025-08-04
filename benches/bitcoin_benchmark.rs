@@ -27,11 +27,11 @@ fn criterion_benchmark(c: &mut Criterion) {
         Arc::new(BtcBlockProvider::new(btc_client.clone(), fetching_par).expect("Failed to create block provider"));
     let block_persistence: Arc<dyn BlockPersistence<Block>> = Arc::new(BtcBlockPersistence { db: Arc::clone(&db) });
 
-    info!("Getting small block");
+    info!("Getting small block with 29 txs");
     let small_block = btc_client.get_block_by_height(Height(135204)).unwrap();
-    info!("Getting avg block");
+    info!("Getting avg block with 343 txs");
     let avg_block = btc_client.get_block_by_height(Height(217847)).unwrap();
-    info!("Getting huge block");
+    info!("Getting huge block with 3713 txs");
     let huge_block = btc_client.get_block_by_height(Height(908244)).unwrap();
 
     info!("Initiating processing");
@@ -44,37 +44,20 @@ fn criterion_benchmark(c: &mut Criterion) {
     group.throughput(Throughput::Elements(1));
     group.warm_up_time(Duration::from_millis(100));
     group.measurement_time(Duration::from_millis(1000));
+    group.sample_size(85);
     group.bench_function(BenchmarkId::from_parameter("small_block_processing"), |bencher| {
         bencher.iter(|| block_provider.process_block(&small_block).expect("Failed to process small_block"));
     });
+    group.sample_size(60);
     group.bench_function(BenchmarkId::from_parameter("avg_block_processing"), |bencher| {
         bencher.iter(|| block_provider.process_block(&avg_block).expect("Failed to process avg_block"));
     });
+    group.sample_size(45);
     group.bench_function(BenchmarkId::from_parameter("huge_block_processing"), |bencher| {
         bencher.iter(|| block_provider.process_block(&huge_block).expect("Failed to process huge_block"));
     });
-    group.bench_function(BenchmarkId::from_parameter("huge_block_persistence"), |bencher| {
-        bencher.iter_batched_ref(
-            || vec![processed_huge_block.clone()], // setup once
-            |blocks| {
-                block_persistence
-                    .store_blocks(std::mem::take(blocks))
-                    .expect("Failed to persist huge_block");
-            },
-            BatchSize::SmallInput,
-        );
-    });
-    group.bench_function(BenchmarkId::from_parameter("avg_block_persistence"), |bencher| {
-        bencher.iter_batched_ref(
-            || vec![processed_avg_block.clone()], // setup once
-            |blocks| {
-                block_persistence
-                    .store_blocks(std::mem::take(blocks))
-                    .expect("Failed to persist avg_block");
-            },
-            BatchSize::SmallInput,
-        );
-    });
+
+    group.sample_size(20);
     group.bench_function(BenchmarkId::from_parameter("small_block_persistence"), |bencher| {
         bencher.iter_batched_ref(
             || vec![processed_small_block.clone()], // setup once
@@ -83,7 +66,31 @@ fn criterion_benchmark(c: &mut Criterion) {
                     .store_blocks(std::mem::take(blocks))
                     .expect("Failed to persist small_block");
             },
-            BatchSize::SmallInput,
+            BatchSize::LargeInput,
+        );
+    });
+    group.sample_size(10);
+    group.bench_function(BenchmarkId::from_parameter("avg_block_persistence"), |bencher| {
+        bencher.iter_batched_ref(
+            || vec![processed_avg_block.clone()], // setup once
+            |blocks| {
+                block_persistence
+                    .store_blocks(std::mem::take(blocks))
+                    .expect("Failed to persist avg_block");
+            },
+            BatchSize::LargeInput,
+        );
+    });
+    group.sample_size(10);
+    group.bench_function(BenchmarkId::from_parameter("huge_block_persistence"), |bencher| {
+        bencher.iter_batched_ref(
+            || vec![processed_huge_block.clone()], // setup once
+            |blocks| {
+                block_persistence
+                    .store_blocks(std::mem::take(blocks))
+                    .expect("Failed to persist huge_block");
+            },
+            BatchSize::LargeInput,
         );
     });
 

@@ -7,3 +7,4 @@ pub mod btc_client;
 pub mod config;
 pub mod model;
 pub mod storage;
+pub mod codec;
