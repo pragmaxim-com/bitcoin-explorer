@@ -1,5 +1,4 @@
 use crate::btc_client::{BtcBlock, BtcClient};
-use crate::config::BitcoinConfig;
 use crate::model::{Address, Block, BlockHash, BlockHeader, Height, BlockTimestamp, ExplorerError, ScriptHash, TempInputRef, Transaction, TxHash, BlockPointer, Utxo, TransactionPointer, MerkleRoot};
 use async_trait::async_trait;
 use chain_syncer::api::{BlockProvider, ChainSyncError};
@@ -22,8 +21,8 @@ pub struct BtcBlockProvider {
 }
 
 impl BtcBlockProvider {
-    pub fn new(bitcoin_config: &BitcoinConfig, fetching_par: usize) -> Result<Self, ExplorerError> {
-        Ok(BtcBlockProvider { client: Arc::new(BtcClient::new(bitcoin_config)?), fetching_par })
+    pub fn new(client: Arc<BtcClient>, fetching_par: usize) -> Result<Self, ExplorerError> {
+        Ok(BtcBlockProvider { client, fetching_par })
     }
     fn process_inputs(&self, ins: &[bitcoin::TxIn]) -> Vec<TempInputRef> {
         ins.iter()

@@ -17,8 +17,13 @@ pub struct BtcClient {
 
 impl BtcClient {
     pub fn new(bitcoin_config: &BitcoinConfig) -> Result<Self, ExplorerError> {
-        let user_pass = Auth::UserPass(bitcoin_config.api_username.to_string(), bitcoin_config.api_password.to_string());
-        let client = Client::new(bitcoin_config.api_host.as_str(), user_pass)?;
+        let user_pass = Auth::UserPass(
+            bitcoin_config.api_username.clone(),
+            bitcoin_config.api_password.clone(),
+        );
+
+        let url = bitcoin_config.api_host.clone(); // e.g. "http://example.com:8332"
+        let client = Client::new(&url, user_pass)?;
         let rpc_client = Arc::new(client);
         Ok(BtcClient { rpc_client })
     }

@@ -4,11 +4,11 @@ version = "0.1.0"
 edition = "2024"
 
 [[bench]]
-name = "processor_benchmark"
+name = "bitcoin_benchmark"
 harness = false
 
 [dev-dependencies]
-criterion = { version = "0.6.0", features = ["async_tokio"] }
+criterion = { version = "0.7.0", features = ["async_tokio"] }
 
 [dependencies]
 tokio = { version = "1.45.1", features = ["full"] }

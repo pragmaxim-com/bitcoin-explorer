@@ -11,7 +11,7 @@ use std::sync::Arc;
 use tower_http::cors;
 use bitcoin_explorer::block_persistence::BtcBlockPersistence;
 use bitcoin_explorer::block_provider::BtcBlockProvider;
-use bitcoin_explorer::btc_client::BtcBlock;
+use bitcoin_explorer::btc_client::{BtcBlock, BtcClient};
 use bitcoin_explorer::config::BitcoinConfig;
 use bitcoin_explorer::model::Block;
 use bitcoin_explorer::storage;
@@ -47,7 +47,8 @@ async fn main() -> Result<()> {
     let db = Arc::new(storage::get_db(full_db_path)?);
     let fetching_par: usize = app_config.indexer.fetching_parallelism.clone().into();
 
-    let block_provider: Arc<dyn BlockProvider<BtcBlock, Block>> = Arc::new(BtcBlockProvider::new(&btc_config, fetching_par)?);
+    let btc_client = Arc::new(BtcClient::new(&btc_config)?);
+    let block_provider: Arc<dyn BlockProvider<BtcBlock, Block>> = Arc::new(BtcBlockProvider::new(btc_client, fetching_par)?);
     let block_persistence: Arc<dyn BlockPersistence<Block>> = Arc::new(BtcBlockPersistence { db: Arc::clone(&db) });
     let scheduler: Scheduler<BtcBlock, Block> = Scheduler::new(block_provider, block_persistence);
 
