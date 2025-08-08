@@ -1,6 +1,6 @@
 [package]
 name = "bitcoin-explorer"
-version = "0.1.0"
+version = "1.0.1"
 edition = "2024"
 
 [[bench]]
@@ -13,8 +13,8 @@ criterion = { version = "0.7.0", features = ["async_tokio"] }
 [dependencies]
 tokio = { version = "1.45.1", features = ["full"] }
 tokio-stream = { version = "0.1.17", features = ["sync"] }
-chain-syncer = { git = "https://github.com/pragmaxim-com/chain-syncer" }
-redbit = { git = "https://github.com/pragmaxim-com/redbit" }
+chain-syncer = { git = "https://github.com/pragmaxim-com/chain-syncer", tag = "v1.0.1" }
+redbit = { git = "https://github.com/pragmaxim-com/redbit", tag = "v1.0.1" }
 config = "0.15.11"
 bitcoin = "0.32.0"
 bitcoincore-rpc = {git = "https://github.com/clarkmoody/rust-bitcoincore-rpc", branch = "support-core-22-and-23"}

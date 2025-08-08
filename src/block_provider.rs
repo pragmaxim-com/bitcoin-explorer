@@ -102,17 +102,18 @@ impl BlockProvider<BtcBlock, Block> for BtcBlockProvider {
         Ok(processed_block.header)
     }
 
-    async fn stream(
+    fn stream(
         &self,
         chain_tip_header: BlockHeader,
         last_header: Option<BlockHeader>,
-    ) -> Pin<Box<dyn Stream<Item = BtcBlock> + Send + 'life0>> {
+    ) -> Pin<Box<dyn Stream<Item = BtcBlock> + Send + 'static>> {
         let last_height = last_header.map_or(0, |h| h.id.0);
         info!("Indexing from {:?} to {:?}", last_height, chain_tip_header);
         let heights = last_height..=chain_tip_header.id.0;
+        let client = Arc::clone(&self.client);
         tokio_stream::iter(heights)
-            .map(|height| {
-                let client = Arc::clone(&self.client);
+            .map(move |height| {
+                let client = Arc::clone(&client);
                 tokio::task::spawn_blocking(move || client.get_block_by_height(Height(height)).expect("Failed to get block by height"))
             })
             .buffered(self.fetching_par)
